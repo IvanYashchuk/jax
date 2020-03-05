@@ -314,10 +314,12 @@ custom_lin_p = core.Primitive('custom_lin')
 custom_lin_p.def_abstract_eval(lambda *_, avals_out, **__: avals_out)
 custom_lin_p.multiple_results = True
 
-def _raise_custom_vjp_error_on_jvp(*args, **kwargs):
-  raise TypeError("can't apply forward-mode autodiff (jvp) to a custom_vjp "
-                  "function.")
-custom_lin_p.def_impl(_raise_custom_vjp_error_on_jvp)
+def _custom_lin_impl(*invals, num_res, rev, avals_out):
+  res, tangents = split_list(invals, [num_res])
+  tangents_out = rev.call_wrapped(*(res + tangents))
+  return tangents_out
+custom_lin_p.def_impl(_custom_lin_impl)
+
 
 def _custom_lin_transpose(cts_out, *invals, num_res, rev, avals_out):
   res, _ = split_list(invals, [num_res])
